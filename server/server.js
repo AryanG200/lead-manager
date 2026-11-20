@@ -61,6 +61,16 @@ app.get('/api', (req, res) => {
   });
 });
 
+// Ensure database is connected (essential for Vercel serverless functions)
+app.use(async (req, res, next) => {
+  try {
+    await connectDB();
+    next();
+  } catch (err) {
+    next(err);
+  }
+});
+
 // Mount Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/leads', leadRoutes);
@@ -72,8 +82,8 @@ app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
 
-// Connect to MongoDB and start server if not in test environment
-if (process.env.NODE_ENV !== 'test') {
+// Connect to MongoDB and start server if running as standalone process (local or Render/Railway)
+if (!process.env.VERCEL && process.env.NODE_ENV !== 'test') {
   connectDB()
     .then(() => {
       app.listen(PORT, () => {
