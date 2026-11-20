@@ -6,6 +6,9 @@ const connectDB = require('./config/db');
 const errorHandler = require('./middleware/errorHandler');
 const notFound = require('./middleware/notFound');
 
+// Route imports
+const authRoutes = require('./routes/authRoutes');
+
 const app = express();
 
 // Security Headers
@@ -21,7 +24,6 @@ const allowedOrigins = [
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Allow requests with no origin (like mobile apps, curl, Postman)
       if (!origin || allowedOrigins.includes(origin) || process.env.NODE_ENV !== 'production') {
         return callback(null, true);
       }
@@ -57,13 +59,16 @@ app.get('/api', (req, res) => {
   });
 });
 
+// Mount Routes
+app.use('/api/auth', authRoutes);
+
 // Centralized error handling
 app.use(notFound);
 app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
 
-// Connect to MongoDB and start server if not imported by tests
+// Connect to MongoDB and start server if not in test environment
 if (process.env.NODE_ENV !== 'test') {
   connectDB()
     .then(() => {
@@ -73,7 +78,6 @@ if (process.env.NODE_ENV !== 'test') {
     })
     .catch((err) => {
       console.error(`[Server Start Failed] ${err.message}`);
-      // Even if MongoDB connection fails momentarily, listen so health check works
       app.listen(PORT, () => {
         console.log(`[Server] Lead Manager API running on port ${PORT} (Database connection pending)`);
       });
