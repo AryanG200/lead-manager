@@ -8,6 +8,8 @@ const notFound = require('./middleware/notFound');
 
 // Route imports
 const authRoutes = require('./routes/authRoutes');
+const leadRoutes = require('./routes/leadRoutes');
+const dashboardRoutes = require('./routes/dashboardRoutes');
 
 const app = express();
 
@@ -61,6 +63,8 @@ app.get('/api', (req, res) => {
 
 // Mount Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/leads', leadRoutes);
+app.use('/api/dashboard', dashboardRoutes);
 
 // Centralized error handling
 app.use(notFound);
