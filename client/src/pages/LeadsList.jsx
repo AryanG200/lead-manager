@@ -4,6 +4,7 @@ import { leadService } from '../services/leadService';
 import StatusBadge from '../components/StatusBadge';
 import Pagination from '../components/Pagination';
 import DeleteConfirmationModal from '../components/DeleteConfirmationModal';
+import EmptyState from '../components/EmptyState';
 import {
   Search,
   Filter,
@@ -17,6 +18,8 @@ import {
   RefreshCw,
   X,
   Users,
+  SearchX,
+  Calendar,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -60,7 +63,7 @@ const LeadsList = () => {
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedSearch(search);
-      setCurrentPage(1); // Reset to page 1 on new search
+      setCurrentPage(1);
     }, 350);
     return () => clearTimeout(handler);
   }, [search]);
@@ -125,10 +128,9 @@ const LeadsList = () => {
       setDeleteLoading(true);
       const res = await leadService.deleteLead(leadToDelete._id);
       if (res.success) {
-        toast.success(`Lead "${leadToDelete.name}" deleted`);
+        toast.success(`Lead "${leadToDelete.name}" deleted successfully`);
         setDeleteModalOpen(false);
         setLeadToDelete(null);
-        // If last item on current page was deleted and page > 1, go back one page
         if (leads.length === 1 && currentPage > 1) {
           setCurrentPage((prev) => prev - 1);
         } else {
@@ -142,6 +144,8 @@ const LeadsList = () => {
       setDeleteLoading(false);
     }
   };
+
+  const isFiltering = debouncedSearch || statusFilter !== 'All' || sourceFilter !== 'All';
 
   return (
     <div className="space-y-5">
@@ -171,7 +175,7 @@ const LeadsList = () => {
         </div>
       </div>
 
-      {/* Search, Filter & Sort Controls Card */}
+      {/* Search, Filter & Sort Controls */}
       <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-xs space-y-3">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-3">
           {/* Search Input */}
@@ -264,7 +268,7 @@ const LeadsList = () => {
         </div>
 
         {/* Active Filter Indicators */}
-        {(debouncedSearch || statusFilter !== 'All' || sourceFilter !== 'All') && (
+        {isFiltering && (
           <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
             <div className="flex items-center gap-2 flex-wrap">
               <span>Active filters:</span>
@@ -297,56 +301,50 @@ const LeadsList = () => {
       {/* Leads Table Container */}
       <div className="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
         {loading ? (
-          <div className="p-8 space-y-4">
+          <div className="p-8 space-y-3">
             {[1, 2, 3, 4, 5].map((i) => (
-              <div key={i} className="h-12 bg-slate-100 rounded-lg animate-pulse" />
+              <div key={i} className="h-12 bg-slate-100/80 rounded-lg animate-pulse" />
             ))}
           </div>
         ) : error ? (
           <div className="p-12 text-center">
-            <p className="text-sm font-medium text-rose-600">{error}</p>
+            <p className="text-sm font-medium text-rose-600 mb-3">{error}</p>
             <button
               onClick={fetchLeads}
-              className="mt-3 px-4 py-2 text-xs font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700"
+              className="px-4 py-2 text-xs font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700"
             >
               Try Again
             </button>
           </div>
         ) : leads.length === 0 ? (
-          /* Empty State */
-          <div className="p-12 text-center max-w-sm mx-auto">
-            <div className="w-12 h-12 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center mx-auto mb-3">
-              <Users className="w-6 h-6" />
-            </div>
-            <h3 className="text-base font-semibold text-slate-900">
-              {debouncedSearch || statusFilter !== 'All' || sourceFilter !== 'All'
-                ? 'No matching leads found'
-                : 'No leads in your CRM yet'}
-            </h3>
-            <p className="text-xs text-slate-500 mt-1 mb-5">
-              {debouncedSearch || statusFilter !== 'All' || sourceFilter !== 'All'
-                ? 'Try adjusting your search keywords or resetting your active filters.'
-                : 'Create your first lead to track outreach and qualify prospects.'}
-            </p>
-            {debouncedSearch || statusFilter !== 'All' || sourceFilter !== 'All' ? (
-              <button
-                onClick={handleResetFilters}
-                className="px-4 py-2 text-xs font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50"
-              >
-                Reset Filters
-              </button>
-            ) : (
-              <Link
-                to="/leads/new"
-                className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 shadow-xs"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                <span>Create First Lead</span>
-              </Link>
-            )}
-          </div>
+          <EmptyState
+            icon={isFiltering ? SearchX : Users}
+            title={isFiltering ? 'No matching leads found' : 'No leads in your CRM yet'}
+            description={
+              isFiltering
+                ? 'Try adjusting your search query or reset your active filters.'
+                : 'Create your first lead to track outreach and qualify prospects.'
+            }
+            action={
+              isFiltering ? (
+                <button
+                  onClick={handleResetFilters}
+                  className="px-4 py-2 text-xs font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition"
+                >
+                  Reset Filters
+                </button>
+              ) : (
+                <Link
+                  to="/leads/new"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition shadow-xs"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Create First Lead</span>
+                </Link>
+              )
+            }
+          />
         ) : (
-          /* Table */
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
               <thead>
@@ -410,16 +408,22 @@ const LeadsList = () => {
 
                     {/* Created Date */}
                     <td className="px-4 py-3.5 text-xs text-slate-500">
-                      {new Date(lead.createdAt).toLocaleDateString(undefined, {
-                        year: 'numeric',
-                        month: 'short',
-                        day: 'numeric',
-                      })}
+                      <span className="inline-flex items-center gap-1">
+                        <Calendar className="w-3 h-3 text-slate-400" />
+                        {new Date(lead.createdAt).toLocaleDateString(undefined, {
+                          year: 'numeric',
+                          month: 'short',
+                          day: 'numeric',
+                        })}
+                      </span>
                     </td>
 
                     {/* Actions */}
                     <td className="px-5 py-3.5 text-right">
-                      <div className="flex items-center justify-end gap-1.5" onClick={(e) => e.stopPropagation()}>
+                      <div
+                        className="flex items-center justify-end gap-1.5"
+                        onClick={(e) => e.stopPropagation()}
+                      >
                         <button
                           onClick={() => navigate(`/leads/edit/${lead._id}`)}
                           title="Edit lead"
@@ -444,7 +448,7 @@ const LeadsList = () => {
         )}
 
         {/* Pagination Bar */}
-        {!loading && !error && (
+        {!loading && !error && leads.length > 0 && (
           <Pagination
             currentPage={currentPage}
             totalPages={totalPages}
