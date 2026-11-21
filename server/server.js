@@ -42,7 +42,7 @@ app.use(express.json({ limit: '10kb' }));
 app.use(express.urlencoded({ extended: true, limit: '10kb' }));
 
 // Health Check Endpoint
-app.get('/api/health', (req, res) => {
+app.get(['/api/health', '/health'], (req, res) => {
   res.status(200).json({
     success: true,
     message: 'Lead Manager API is operational',
@@ -52,7 +52,7 @@ app.get('/api/health', (req, res) => {
 });
 
 // Root API Endpoint
-app.get('/api', (req, res) => {
+app.get(['/api', '/'], (req, res) => {
   res.status(200).json({
     success: true,
     name: 'Lead Manager API',
@@ -71,10 +71,10 @@ app.use(async (req, res, next) => {
   }
 });
 
-// Mount Routes
-app.use('/api/auth', authRoutes);
-app.use('/api/leads', leadRoutes);
-app.use('/api/dashboard', dashboardRoutes);
+// Mount Routes (supporting both /api/* and direct routes for Vercel serverless functions)
+app.use(['/api/auth', '/auth'], authRoutes);
+app.use(['/api/leads', '/leads'], leadRoutes);
+app.use(['/api/dashboard', '/dashboard'], dashboardRoutes);
 
 // Centralized error handling
 app.use(notFound);

@@ -1,8 +1,23 @@
 import axios from 'axios';
 
+// Smart base URL: in cloud environments, always use relative '/api' unless an explicit external HTTPS URL is given
+const getBaseUrl = () => {
+  const envUrl = import.meta.env.VITE_API_URL;
+  if (
+    typeof window !== 'undefined' &&
+    window.location.hostname !== 'localhost' &&
+    window.location.hostname !== '127.0.0.1'
+  ) {
+    if (!envUrl || envUrl.includes('localhost') || envUrl.includes('127.0.0.1')) {
+      return '/api';
+    }
+  }
+  return envUrl || '/api';
+};
+
 // Create Axios instance with centralized base URL
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || '/api',
+  baseURL: getBaseUrl(),
   headers: {
     'Content-Type': 'application/json',
   },
@@ -26,10 +41,8 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response && error.response.status === 401) {
-      // Clear token and user on authentication failure
       localStorage.removeItem('lead_manager_token');
       localStorage.removeItem('lead_manager_user');
-      // If we are not already on login or signup, redirect
       if (
         !window.location.pathname.includes('/login') &&
         !window.location.pathname.includes('/signup')

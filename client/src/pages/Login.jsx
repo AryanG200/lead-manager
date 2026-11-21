@@ -44,8 +44,12 @@ const Login = () => {
         navigate(from, { replace: true });
       }
     } catch (err) {
+      console.error('Login error:', err);
       const errorMsg =
-        err.response?.data?.message || 'Invalid email or password. Please try again.';
+        err.response?.data?.message ||
+        (err.code === 'ERR_NETWORK' || err.message === 'Network Error'
+          ? 'Network error: Unable to reach backend server. Please check your connection.'
+          : err.message || 'Invalid email or password. Please try again.');
       setError(errorMsg);
       toast.error(errorMsg);
     } finally {

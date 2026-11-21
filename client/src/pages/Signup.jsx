@@ -48,10 +48,13 @@ const Signup = () => {
         navigate('/dashboard', { replace: true });
       }
     } catch (err) {
+      console.error('Registration error:', err);
       const errorMsg =
         err.response?.data?.message ||
         err.response?.data?.errors?.[0]?.message ||
-        'Registration failed. Please check your information.';
+        (err.code === 'ERR_NETWORK' || err.message === 'Network Error'
+          ? 'Network error: Unable to reach backend server. Please check your connection.'
+          : err.message || 'Registration failed. Please check your information.');
       setError(errorMsg);
       toast.error(errorMsg);
     } finally {
