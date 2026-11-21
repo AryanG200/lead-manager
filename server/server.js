@@ -17,19 +17,29 @@ const app = express();
 app.use(helmet());
 
 // CORS Configuration
-const allowedOrigins = [
-  'http://localhost:5173',
-  'http://localhost:3000',
-  process.env.CLIENT_URL,
-].filter(Boolean);
-
 app.use(
   cors({
     origin: (origin, callback) => {
-      if (!origin || allowedOrigins.includes(origin) || process.env.NODE_ENV !== 'production') {
+      // Allow requests with no origin (like mobile apps, curl, Postman)
+      if (!origin) return callback(null, true);
+
+      // Allow any Vercel deployment preview or production domain (*.vercel.app)
+      if (origin.endsWith('.vercel.app') || origin.includes('vercel.app')) {
         return callback(null, true);
       }
-      return callback(new Error('CORS policy: Not allowed by CORS'));
+
+      // Allow local development ports
+      if (origin.includes('localhost') || origin.includes('127.0.0.1')) {
+        return callback(null, true);
+      }
+
+      // Allow custom client domain if specified in environment
+      if (process.env.CLIENT_URL && origin === process.env.CLIENT_URL) {
+        return callback(null, true);
+      }
+
+      // Allow all valid incoming web origins
+      return callback(null, true);
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
